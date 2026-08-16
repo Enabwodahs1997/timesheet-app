@@ -1,0 +1,30 @@
+<div class="card">
+  <h2>Timesheet Entry</h2>
+
+  <form (ngSubmit)="save()">
+    <div class="row">
+      <div class="col">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="entry.date" name="date" required />
+      </div>
+      <div style="width:140px">
+        <label>Hours</label>
+        <input type="number" [(ngModel)]="entry.hours" name="hours" required />
+      </div>
+      <div style="width:260px">
+        <label>Department</label>
+        <select [(ngModel)]="entry.departmentId" name="departmentId" required>
+          <option value="" disabled>Select department</option>
+          <option *ngFor="let d of service.getDepartments()" [value]="d._id || d.id">{{ d.name }}</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:end">
+        <button class="btn" type="submit">Save</button>
+      </div>
+    </div>
+  </form>
+
+  <div *ngIf="service.getSelectedDepartment()" style="margin-top:12px">
+    <div class="meta">Currently selected department: <strong>{{ service.getSelectedDepartment()?.name }}</strong></div>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<div class="card">
+  <h2>Departments</h2>
+
+  <div class="row" style="margin-bottom:12px">
+    <div class="col">
+      <label>New department name</label>
+      <input placeholder="New department name" [(ngModel)]="newName" />
+    </div>
+    <div>
+      <label style="visibility:hidden">add</label>
+      <div>
+        <button class="btn" (click)="add()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="service.departments$ | async as depts">
+    <ul class="list">
+      <li *ngFor="let d of depts">
+        <!-- display mode -->
+        <div *ngIf="editingId !== (d._id || d.id)" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="font-weight:600;cursor:pointer" (click)="select(d)">{{ d.name }}</div>
+            <div class="meta">ID: {{ d._id || d.id }}</div>
+          </div>
+          <div>
+            <button class="btn ghost" (click)="startEdit(d)">Edit</button>
+            <button class="btn secondary" (click)="delete(d)" style="margin-left:8px">Delete</button>
+          </div>
+        </div>
+
+        <!-- edit mode -->
+        <div *ngIf="editingId === (d._id || d.id)" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <div style="flex:1;margin-right:12px">
+            <input [(ngModel)]="editName" />
+          </div>
+          <div>
+            <button class="btn" (click)="saveEdit(d)">Save</button>
+            <button class="btn ghost" (click)="cancelEdit()" style="margin-left:8px">Cancel</button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+</div>

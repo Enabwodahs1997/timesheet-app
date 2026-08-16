@@ -1,0 +1,47 @@
+{
+  "$schema": "https://angular.io/cli/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "timesheet-tracker": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/timesheet-tracker",
+            "index": "src/index.html",
+            "main": "src/main.ts",
+            "polyfills": [],
+            "tsConfig": "tsconfig.app.json",
+            "assets": [],
+            "styles": ["src/styles.css"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "timesheet-tracker:build"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "timesheet-tracker:build:production"
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "timesheet-tracker"
+}

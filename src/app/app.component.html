@@ -1,0 +1,45 @@
+<header class="app-header">
+  <div class="app-container header-row">
+    <h1>Timesheet Tracker</h1>
+    <div class="settings-right">
+      <div style="position:relative">
+        <button class="settings-btn" (click)="toggleMenu()" aria-label="Open settings">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" fill="currentColor" />
+            <path d="M19.4 15a1 1 0 0 0 .7 1.2l.2.05a1 1 0 0 1 .7 1.2l-.3 1.1a1 1 0 0 1-.9.7h-.1a1 1 0 0 0-1 .7l-.2.9a1 1 0 0 1-1 .7h-1.2a1 1 0 0 1-1-.7l-.2-.9a1 1 0 0 0-1-.7h-1.3a1 1 0 0 1-.9-.7l-.3-1.1a1 1 0 0 1 .7-1.2l.2-.05a1 1 0 0 0 .7-1.2l-.2-1.1a1 1 0 0 1 .9-1.3h.1a1 1 0 0 0 1-.7l.2-.9a1 1 0 0 1 1-.7h1.2a1 1 0 0 1 1 .7l.2.9a1 1 0 0 0 1 .7h.1a1 1 0 0 1 .9 1.3l-.2 1.1z" fill="currentColor" opacity="0.7"/>
+          </svg>
+          <span style="font-size:13px">Settings</span>
+        </button>
+
+        <div *ngIf="showMenu" class="settings-menu card" style="position:absolute;right:0;top:44px;min-width:180px;z-index:60">
+          <div style="font-weight:600;margin-bottom:8px">Theme</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn ghost" (click)="setTheme('light')">
+              <span>Light</span>
+              <span style="float:right">{{ theme === 'light' ? '✓' : '' }}</span>
+            </button>
+            <button class="btn ghost" (click)="setTheme('dark')">
+              <span>Dark</span>
+              <span style="float:right">{{ theme === 'dark' ? '✓' : '' }}</span>
+            </button>
+            <button class="btn ghost" (click)="setTheme('auto')">
+              <span>Auto (system)</span>
+              <span style="float:right">{{ theme === 'auto' ? '✓' : '' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="app-container">
+  <nav class="app-nav">
+    <a routerLink="/departments" routerLinkActive="active">Departments</a>
+    <a routerLink="/timesheet" routerLinkActive="active">Timesheet Entry</a>
+    <a routerLink="/analysis" routerLinkActive="active">Analysis</a>
+  </nav>
+
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+</div>

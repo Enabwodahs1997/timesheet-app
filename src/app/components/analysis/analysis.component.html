@@ -1,0 +1,15 @@
+<div class="card">
+  <h2>Analysis</h2>
+  <ng-container *ngIf="service.entries$ | async as entries">
+    <div *ngIf="entries.length === 0" class="meta">No timesheet entries yet.</div>
+
+    <ul class="list" *ngIf="entries.length > 0">
+      <li *ngFor="let e of entries">
+        <div>
+          <div style="font-weight:600">{{ e.date }} — {{ e.hours }}h</div>
+          <div class="meta">Dept: {{ e.departmentId }}</div>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+</div>
