@@ -167,6 +167,23 @@ export class AnalysisComponent implements OnInit {
     }));
   }
 
+  getDepartmentColor(index: number): string {
+    const palette = [
+      '#a5b4fc',
+      '#86efac',
+      '#fcd34d',
+      '#fca5a5',
+      '#c4b5fd',
+      '#67e8f9',
+      '#fdba74',
+      '#bef264',
+      '#f9a8d4',
+      '#99f6e4'
+    ];
+
+    return palette[index % palette.length];
+  }
+
   getMonthlyTrend(entries: any[] = []): Array<{ label: string; value: number; total: number }> {
     const grouped = new Map<string, { key: string; label: string; total: number }>();
 

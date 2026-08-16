@@ -57,7 +57,7 @@
         <div class="breakdown-box">
           <h3>Department breakdown</h3>
           <div class="breakdown-list" *ngIf="getDepartmentTotals(getFilteredEntries(entries), departments).length > 0; else emptyBreakdown">
-            <div class="breakdown-row" *ngFor="let dept of getDepartmentTotals(getFilteredEntries(entries), departments)">
+            <div class="breakdown-row" *ngFor="let dept of getDepartmentTotals(getFilteredEntries(entries), departments); let i = index" [style.borderLeft]="'4px solid ' + getDepartmentColor(i)" [style.background]="'linear-gradient(90deg, ' + getDepartmentColor(i) + '22, #fff 38%)'">
               <span>{{ dept.name }}</span>
               <span>{{ dept.hours.toFixed(1) }} hrs</span>
               <strong>${{ dept.total.toFixed(2) }}</strong>
@@ -70,18 +70,20 @@
 
         <div class="chart-box">
           <h3>Department totals</h3>
-          <div class="chart-legend">
-            <span class="legend-swatch blue"></span>
-            <span>Pay by department</span>
+          <div class="chart-legend" *ngIf="getChartData(getFilteredEntries(entries), departments).length > 0">
+            <div class="legend-item" *ngFor="let item of getChartData(getFilteredEntries(entries), departments); let i = index">
+              <span class="legend-swatch" [style.background]="getDepartmentColor(i)"></span>
+              <span>{{ item.label }}</span>
+            </div>
           </div>
           <div class="chart-list" *ngIf="getChartData(getFilteredEntries(entries), departments).length > 0; else emptyChart">
-            <div class="chart-row" *ngFor="let item of getChartData(getFilteredEntries(entries), departments)">
+            <div class="chart-row" *ngFor="let item of getChartData(getFilteredEntries(entries), departments); let i = index">
               <div class="chart-meta">
                 <span>{{ item.label }}</span>
                 <strong>${{ item.total.toFixed(2) }}</strong>
               </div>
               <div class="chart-track">
-                <div class="chart-bar" [style.width.%]="item.value"></div>
+                <div class="chart-bar" [style.width.%]="item.value" [style.background]="getDepartmentColor(i)"></div>
               </div>
             </div>
           </div>
