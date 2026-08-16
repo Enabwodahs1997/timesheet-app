@@ -61,9 +61,51 @@ input[type="text"], input[type="date"], input[type="number"], select, input{
 .list li{padding:10px;border-bottom:1px dashed #f0f2f5;display:flex;align-items:center;justify-content:space-between}
 .meta{color:var(--muted);font-size:13px}
 
+.analysis-card{padding:20px}
+.analysis-list{list-style:none;padding:0;margin:16px 0 0;display:flex;flex-direction:column;gap:12px}
+.analysis-item{padding:14px 16px;border:1px solid #edf1f5;border-radius:12px;background:#f9fafb}
+.analysis-main{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.analysis-date{font-weight:700;font-size:15px}
+.analysis-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:12px;margin:16px 0}
+.summary-box{background:#f3f7ff;border:1px solid #dfeaff;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.summary-box-wide{grid-column:1 / -1}
+.summary-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
+.analysis-controls{margin:12px 0 10px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.analysis-controls label{margin:0;min-width:180px}
+.analysis-controls select{background:#fff}
+.analysis-controls .btn{height:42px}
+.custom-range{display:flex;gap:12px;flex-wrap:wrap}
+.custom-range label{min-width:160px}
+.breakdown-box, .chart-box{margin:16px 0;padding:14px;border:1px solid #edf1f5;border-radius:12px;background:#fbfcff}
+.breakdown-box h3, .chart-box h3{margin:0 0 12px;font-size:16px}
+.breakdown-list{display:flex;flex-direction:column;gap:8px}
+.breakdown-row{display:grid;grid-template-columns:1.5fr 1fr auto;gap:12px;align-items:center;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #edf1f5}
+.chart-list{display:flex;flex-direction:column;gap:12px}
+.chart-row{display:flex;flex-direction:column;gap:8px}
+.chart-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px}
+.chart-legend{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;padding:6px 10px;border-radius:999px;background:#eef5ff;border:1px solid #dbeafe;color:#1f3a5f;font-size:12px;font-weight:600}
+.legend-swatch{display:inline-block;width:12px;height:12px;border-radius:50%}
+.legend-swatch.blue{background:linear-gradient(90deg,#1e88e5,#64b5f6)}
+.legend-swatch.green{background:linear-gradient(90deg,#43a047,#81c784)}
+.chart-track{width:100%;height:10px;border-radius:999px;background:#e9eef6;overflow:hidden}
+.chart-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#1e88e5,#64b5f6)}
+.chart-bar-alt{background:linear-gradient(90deg,#43a047,#81c784)}
+.analysis-edit{display:flex;flex-direction:column;gap:12px;width:100%}
+.analysis-edit-grid{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr));gap:10px}
+.analysis-edit label{margin:0}
+
 @media (max-width:720px){
   .row{flex-direction:column}
   nav.app-nav{flex-wrap:wrap}
+  .summary-grid, .analysis-edit-grid{grid-template-columns:1fr}
+  .analysis-main{flex-direction:column;align-items:flex-start}
+  .analysis-actions{width:100%}
+  .analysis-actions .btn{flex:1}
+  .breakdown-row{grid-template-columns:1fr;align-items:flex-start}
+  .analysis-controls{align-items:stretch;flex-direction:column}
+  .analysis-controls label, .analysis-controls .btn{width:100%}
+  .custom-range{flex-direction:column}
 }
 
 /* Mobile tweaks for smaller phones */
@@ -94,6 +136,12 @@ input[type="text"], input[type="date"], input[type="number"], select, input{
 .dark header.app-header{background:linear-gradient(90deg,var(--primary),var(--accent))}
 .dark .card{background:var(--card);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
 .dark input, .dark select{background:#0c1118;border-color:#1f2937;color:var(--muted)}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="date"]::-webkit-inner-spin-button,
+.dark input[type="date"]::-webkit-clear-button {
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+}
 .dark .btn.secondary{background:#ef4444;color:#fff}
 .dark .btn.ghost{background:transparent;border-color:#1f2937;color:var(--muted)}
 

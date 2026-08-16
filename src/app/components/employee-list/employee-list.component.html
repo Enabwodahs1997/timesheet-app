@@ -1,0 +1,43 @@
+<div class="card">
+  <h2>Employees</h2>
+
+  <div class="row" style="margin-bottom:12px">
+    <div class="col">
+      <label>New employee name</label>
+      <input placeholder="New employee name" [(ngModel)]="newName" />
+    </div>
+    <div>
+      <label style="visibility:hidden">add</label>
+      <div>
+        <button class="btn" (click)="add()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="service.employees$ | async as employees">
+    <ul class="list">
+      <li *ngFor="let emp of employees">
+        <div *ngIf="editingId !== (emp._id || emp.id)" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="font-weight:600">{{ emp.name }}</div>
+            <div class="meta">ID: {{ emp._id || emp.id }}</div>
+          </div>
+          <div>
+            <button class="btn ghost" (click)="startEdit(emp)">Edit</button>
+            <button class="btn secondary" (click)="delete(emp)" style="margin-left:8px">Delete</button>
+          </div>
+        </div>
+
+        <div *ngIf="editingId === (emp._id || emp.id)" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <div style="flex:1;margin-right:12px">
+            <input [(ngModel)]="editName" />
+          </div>
+          <div>
+            <button class="btn" (click)="saveEdit(emp)">Save</button>
+            <button class="btn ghost" (click)="cancelEdit()" style="margin-left:8px">Cancel</button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+</div>

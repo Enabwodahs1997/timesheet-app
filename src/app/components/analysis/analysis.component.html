@@ -1,15 +1,160 @@
-<div class="card">
+<div class="card analysis-card">
   <h2>Analysis</h2>
+
   <ng-container *ngIf="service.entries$ | async as entries">
     <div *ngIf="entries.length === 0" class="meta">No timesheet entries yet.</div>
 
-    <ul class="list" *ngIf="entries.length > 0">
-      <li *ngFor="let e of entries">
-        <div>
-          <div style="font-weight:600">{{ e.date }} — {{ e.hours }}h</div>
-          <div class="meta">Dept: {{ e.departmentId }}</div>
+    <ng-container *ngIf="entries.length > 0">
+      <ng-container *ngIf="service.departments$ | async as departments">
+        <ng-container *ngIf="service.employees$ | async as employees">
+        <div class="analysis-controls">
+          <label>
+            Department
+            <select [(ngModel)]="selectedDepartment" name="departmentFilter">
+              <option value="all">All departments</option>
+              <option *ngFor="let dept of departments" [value]="dept._id || dept.id">{{ dept.name }}</option>
+            </select>
+          </label>
+          <label>
+            Date range
+            <select [(ngModel)]="selectedRange" name="rangeFilter">
+              <option value="all">All time</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+              <option value="30d">Last 30 days</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </label>
+          <div class="custom-range" *ngIf="selectedRange === 'custom'">
+            <label>
+              Start date
+              <input type="date" [(ngModel)]="customStartDate" (ngModelChange)="onCustomDateChange()" name="customStartDate" />
+            </label>
+            <label>
+              End date
+              <input type="date" [(ngModel)]="customEndDate" (ngModelChange)="onCustomDateChange()" name="customEndDate" />
+            </label>
+          </div>
+          <button class="btn ghost" type="button" (click)="clearFilters()">Clear filters</button>
+          <button class="btn" type="button" (click)="exportCsv(entries)">Export CSV</button>
         </div>
-      </li>
-    </ul>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span class="summary-label">Filtered Hours</span>
+            <strong>{{ getWeeklySummary(entries).hours.toFixed(1) }} hrs</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Filtered Pay</span>
+            <strong>${{ getWeeklySummary(entries).total.toFixed(2) }}</strong>
+          </div>
+          <div class="summary-box summary-box-wide">
+            <span class="summary-label">Grand Total</span>
+            <strong>${{ getGrandTotal(getFilteredEntries(entries)).toFixed(2) }}</strong>
+          </div>
+        </div>
+
+        <div class="breakdown-box">
+          <h3>Department breakdown</h3>
+          <div class="breakdown-list" *ngIf="getDepartmentTotals(getFilteredEntries(entries), departments).length > 0; else emptyBreakdown">
+            <div class="breakdown-row" *ngFor="let dept of getDepartmentTotals(getFilteredEntries(entries), departments)">
+              <span>{{ dept.name }}</span>
+              <span>{{ dept.hours.toFixed(1) }} hrs</span>
+              <strong>${{ dept.total.toFixed(2) }}</strong>
+            </div>
+          </div>
+          <ng-template #emptyBreakdown>
+            <div class="meta">No department totals in this range.</div>
+          </ng-template>
+        </div>
+
+        <div class="chart-box">
+          <h3>Department totals</h3>
+          <div class="chart-legend">
+            <span class="legend-swatch blue"></span>
+            <span>Pay by department</span>
+          </div>
+          <div class="chart-list" *ngIf="getChartData(getFilteredEntries(entries), departments).length > 0; else emptyChart">
+            <div class="chart-row" *ngFor="let item of getChartData(getFilteredEntries(entries), departments)">
+              <div class="chart-meta">
+                <span>{{ item.label }}</span>
+                <strong>${{ item.total.toFixed(2) }}</strong>
+              </div>
+              <div class="chart-track">
+                <div class="chart-bar" [style.width.%]="item.value"></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #emptyChart>
+            <div class="meta">No chart data for this filter.</div>
+          </ng-template>
+        </div>
+
+        <div class="chart-box">
+          <h3>Monthly trend</h3>
+          <div class="chart-legend">
+            <span class="legend-swatch green"></span>
+            <span>Monthly pay total</span>
+          </div>
+          <div class="chart-list" *ngIf="getMonthlyTrend(getFilteredEntries(entries)).length > 0; else emptyTrendChart">
+            <div class="chart-row" *ngFor="let item of getMonthlyTrend(getFilteredEntries(entries))">
+              <div class="chart-meta">
+                <span>{{ item.label }}</span>
+                <strong>${{ item.total.toFixed(2) }}</strong>
+              </div>
+              <div class="chart-track">
+                <div class="chart-bar chart-bar-alt" [style.width.%]="item.value"></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #emptyTrendChart>
+            <div class="meta">No monthly trend data for this range.</div>
+          </ng-template>
+        </div>
+
+        <ul class="analysis-list">
+          <li *ngFor="let e of getFilteredEntries(entries)" class="analysis-item">
+            <ng-container *ngIf="editingId !== (e._id || e.id); else editMode">
+              <div class="analysis-main">
+                <div>
+                  <div class="analysis-date">{{ getEmployeeName(e.employeeId, employees) }} — {{ e.date }} — {{ e.hours }}h</div>
+                  <div class="meta">
+                    Rate: ${{ getEntryRate(e).toFixed(2) }}/hr | Total Pay: ${{ getEntryTotalPay(e).toFixed(2) }}
+                  </div>
+                </div>
+                <div class="analysis-actions">
+                  <button class="btn ghost" type="button" (click)="startEdit(e)">Edit</button>
+                  <button class="btn secondary" type="button" (click)="deleteEntry(e)">Delete</button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #editMode>
+              <div class="analysis-edit">
+                <div class="analysis-edit-grid">
+                  <label>
+                    Date
+                    <input type="date" [(ngModel)]="draft.date" name="entryDate" />
+                  </label>
+                  <label>
+                    Hours
+                    <input type="number" min="0" step="0.5" [(ngModel)]="draft.hours" name="entryHours" />
+                  </label>
+                  <label>
+                    Hourly Rate
+                    <input type="number" min="0" step="0.01" [(ngModel)]="draft.payAmount" name="entryRate" />
+                  </label>
+                </div>
+                <div class="analysis-actions">
+                  <button class="btn" type="button" (click)="saveEdit(e)">Save</button>
+                  <button class="btn ghost" type="button" (click)="cancelEdit()">Cancel</button>
+                </div>
+              </div>
+            </ng-template>
+          </li>
+        </ul>
+        </ng-container>
+      </ng-container>
+    </ng-container>
   </ng-container>
 </div>

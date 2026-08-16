@@ -4,13 +4,30 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, tap } from 'rxjs/operators';
 import { TimesheetEntry } from '../models/timesheet';
 import { Department } from '../models/department';
+import { Employee } from '../models/employee';
 
 @Injectable({ providedIn: 'root' })
 export class TimesheetService {
   private baseUrl = 'http://localhost:3000/api';
 
-  // local cache for departments (start empty)
+  private normalizeEntry(entry: TimesheetEntry): TimesheetEntry {
+    const hours = Number(entry.hours ?? 0);
+    const rate = Number(entry.payAmount ?? 0);
+    const totalPay = Number(entry.totalPay ?? hours * rate);
+
+    return {
+      ...entry,
+      hours,
+      payAmount: rate,
+      totalPay,
+      departmentId: entry.departmentId ?? '',
+      employeeId: (entry as any).employeeId ?? ''
+    };
+  }
+
+  // local cache for departments and employees (start empty)
   private departments: Department[] = [];
+  private employees: Employee[] = [];
 
   // currently selected department
   selectedDepartment?: Department;
@@ -19,43 +36,128 @@ export class TimesheetService {
   entries$ = this.entriesSubject.asObservable();
   private departmentsSubject = new BehaviorSubject<Department[]>(this.departments);
   departments$ = this.departmentsSubject.asObservable();
+  private employeesSubject = new BehaviorSubject<Employee[]>(this.employees);
+  employees$ = this.employeesSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
   addEntry(entry: TimesheetEntry): Observable<any> {
-    return this.http.post<TimesheetEntry>(`${this.baseUrl}/entries`, entry).pipe(
+    const normalized = this.normalizeEntry(entry);
+
+    return this.http.post<TimesheetEntry>(`${this.baseUrl}/entries`, normalized).pipe(
       tap((saved: TimesheetEntry) => {
-        // update entries observable
         const current = this.entriesSubject.getValue();
-        this.entriesSubject.next([saved, ...current]);
+        this.entriesSubject.next([this.normalizeEntry(saved), ...current]);
       }),
       catchError((err: any) => {
-        // fallback to local store if backend fails
         console.error('POST /entries failed, using local fallback', err);
-        this._localAdd(entry);
-        // update entries observable with fallback entry
+        const localEntry = this.normalizeEntry({
+          ...entry,
+          ...(entry as any)._id ? { _id: (entry as any)._id } : { _id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}` }
+        } as TimesheetEntry);
+        this._localAdd(localEntry);
         const current = this.entriesSubject.getValue();
-        this.entriesSubject.next([entry, ...current]);
-        return of(entry);
+        this.entriesSubject.next([localEntry, ...current]);
+        return of(localEntry);
       })
     );
   }
 
   getAll(): Observable<TimesheetEntry[]> {
     return this.http.get<TimesheetEntry[]>(`${this.baseUrl}/entries`).pipe(
-      tap((list: TimesheetEntry[]) => this.entriesSubject.next(list)),
+      tap((list: TimesheetEntry[]) => this.entriesSubject.next(list.map(entry => this.normalizeEntry(entry)))),
       catchError((err: any) => {
         console.error('GET /entries failed, returning local cache', err);
-        const local = this._localGetAll();
+        const local = this._localGetAll().map(entry => this.normalizeEntry(entry));
         this.entriesSubject.next(local);
         return of(local);
       })
     );
   }
 
+  updateEntry(id: string, data: Partial<TimesheetEntry>): Observable<any> {
+    const normalized = this.normalizeEntry({
+      ...(this.entriesSubject.getValue().find((entry: any) => (entry as any)._id === id || (entry as any).id === id) || {}),
+      ...data,
+      totalPay: Number((Number(data.hours ?? 0) * Number(data.payAmount ?? 0)).toFixed(2))
+    } as TimesheetEntry);
+
+    return this.http.put<TimesheetEntry>(`${this.baseUrl}/entries/${id}`, normalized).pipe(
+      tap((updated: TimesheetEntry) => {
+        const current = this.entriesSubject.getValue();
+        const item = this.normalizeEntry(updated);
+        this.entriesSubject.next(current.map((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId === id ? item : entry;
+        }));
+        const localEntries = this._localGetAll();
+        (this as any)._entries = localEntries.map((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId === id ? item : entry;
+        });
+      }),
+      catchError((err: any) => {
+        console.error('PUT /entries failed, applying local fallback', err);
+        const current = this.entriesSubject.getValue();
+        const item = this.normalizeEntry({
+          ...(current.find((entry: any) => (entry as any)._id === id || (entry as any).id === id) || {}),
+          ...data,
+          totalPay: Number((Number(data.hours ?? 0) * Number(data.payAmount ?? 0)).toFixed(2))
+        } as TimesheetEntry);
+        const updatedCurrent = current.map((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId === id ? item : entry;
+        });
+        this.entriesSubject.next(updatedCurrent);
+        const localEntries = this._localGetAll();
+        (this as any)._entries = localEntries.map((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId === id ? item : entry;
+        });
+        return of(item);
+      })
+    );
+  }
+
+  deleteEntry(id: string): Observable<any> {
+    const key = id || '';
+
+    const removeFromLocal = () => {
+      const localEntries = this._localGetAll();
+      const updatedLocal = localEntries.filter((entry: TimesheetEntry) => {
+        const entryId = (entry as any)._id || (entry as any).id;
+        return entryId !== key;
+      });
+      (this as any)._entries = updatedLocal;
+    };
+
+    return this.http.delete(`${this.baseUrl}/entries/${key}`).pipe(
+      tap(() => {
+        const current = this.entriesSubject.getValue();
+        const updated = current.filter((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId !== key;
+        });
+        this.entriesSubject.next(updated);
+        removeFromLocal();
+      }),
+      catchError((err: any) => {
+        console.error('DELETE /entries failed, applying local fallback', err);
+        const current = this.entriesSubject.getValue();
+        const updated = current.filter((entry: TimesheetEntry) => {
+          const entryId = (entry as any)._id || (entry as any).id;
+          return entryId !== key;
+        });
+        this.entriesSubject.next(updated);
+        removeFromLocal();
+        return of(null);
+      })
+    );
+  }
+
   private _localAdd(entry: TimesheetEntry) {
-    // simple in-memory fallback
-    (this._localGetAll() as TimesheetEntry[]).unshift(entry as any);
+    const normalized = this.normalizeEntry(entry);
+    (this._localGetAll() as TimesheetEntry[]).unshift(normalized);
   }
 
   private _localGetAll(): TimesheetEntry[] {
@@ -124,6 +226,61 @@ export class TimesheetService {
         // remove locally so UI responds even if backend is down
         const current = this.departmentsSubject.getValue();
         this.departmentsSubject.next(current.filter((d: Department) => (d._id || d.id) !== id));
+        return of(null);
+      })
+    );
+  }
+
+  getEmployees(): Observable<Employee[]> {
+    return this.http.get<Employee[]>(`${this.baseUrl}/employees`).pipe(
+      tap((list: Employee[]) => this.employeesSubject.next(list)),
+      catchError((err: any) => {
+        console.error('GET /employees failed, returning local list', err);
+        this.employeesSubject.next(this.employees);
+        return of(this.employees);
+      })
+    );
+  }
+
+  addEmployee(emp: Partial<Employee>): Observable<any> {
+    return this.http.post<Employee>(`${this.baseUrl}/employees`, emp).pipe(
+      tap((saved: Employee) => {
+        const current = this.employeesSubject.getValue();
+        this.employeesSubject.next([saved, ...current]);
+      }),
+      catchError((err: any) => {
+        console.error('POST /employees failed, using local fallback', err);
+        const local: Employee = { _id: Math.random().toString(36).slice(2), ...emp } as Employee;
+        const current = this.employeesSubject.getValue();
+        this.employeesSubject.next([local, ...current]);
+        return of(local);
+      })
+    );
+  }
+
+  updateEmployee(id: string, data: Partial<Employee>): Observable<any> {
+    return this.http.put<Employee>(`${this.baseUrl}/employees/${id}`, data).pipe(
+      tap((updated: Employee) => {
+        const current = this.employeesSubject.getValue();
+        this.employeesSubject.next(current.map((e: Employee) => (e._id === updated._id ? updated : e)));
+      }),
+      catchError((err: any) => {
+        console.error('PUT /employees failed', err);
+        return of(null);
+      })
+    );
+  }
+
+  deleteEmployee(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/employees/${id}`).pipe(
+      tap(() => {
+        const current = this.employeesSubject.getValue();
+        this.employeesSubject.next(current.filter((e: Employee) => (e._id || e.id) !== id));
+      }),
+      catchError((err: any) => {
+        console.error('DELETE /employees failed, applying local fallback', err);
+        const current = this.employeesSubject.getValue();
+        this.employeesSubject.next(current.filter((e: Employee) => (e._id || e.id) !== id));
         return of(null);
       })
     );

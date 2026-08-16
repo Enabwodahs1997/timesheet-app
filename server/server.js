@@ -16,7 +16,10 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
 const entrySchema = new mongoose.Schema({
   date: String,
   hours: Number,
-  departmentId: String
+  payAmount: Number,
+  totalPay: Number,
+  departmentId: String,
+  employeeId: String
 }, { timestamps: true });
 
 const Entry = mongoose.model('Entry', entrySchema);
@@ -26,6 +29,12 @@ const departmentSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Department = mongoose.model('Department', departmentSchema);
+
+const employeeSchema = new mongoose.Schema({
+  name: { type: String, required: true }
+}, { timestamps: true });
+
+const Employee = mongoose.model('Employee', employeeSchema);
 
 app.get('/api/entries', async (req, res) => {
   try {
@@ -43,6 +52,24 @@ app.post('/api/entries', async (req, res) => {
     res.json(saved);
   } catch (err) {
     res.status(500).json({ error: 'failed to save entry' });
+  }
+});
+
+app.put('/api/entries/:id', async (req, res) => {
+  try {
+    const updated = await Entry.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to update entry' });
+  }
+});
+
+app.delete('/api/entries/:id', async (req, res) => {
+  try {
+    await Entry.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'failed to delete entry' });
   }
 });
 
@@ -81,6 +108,44 @@ app.delete('/api/departments/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'failed to delete department' });
+  }
+});
+
+// Employees CRUD
+app.get('/api/employees', async (req, res) => {
+  try {
+    const employees = await Employee.find().sort({ name: 1 }).lean();
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to fetch employees' });
+  }
+});
+
+app.post('/api/employees', async (req, res) => {
+  try {
+    const employee = new Employee(req.body);
+    const saved = await employee.save();
+    res.json(saved);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to save employee' });
+  }
+});
+
+app.put('/api/employees/:id', async (req, res) => {
+  try {
+    const updated = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to update employee' });
+  }
+});
+
+app.delete('/api/employees/:id', async (req, res) => {
+  try {
+    await Employee.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'failed to delete employee' });
   }
 });
 

@@ -12,13 +12,18 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule]
 })
 export class TimesheetEntryComponent implements OnInit, OnDestroy {
-  entry: TimesheetEntry = { date: '', hours: 0, departmentId: '' };
+  entry: TimesheetEntry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
   private sub?: Subscription;
 
   constructor(public service: TimesheetService) {}
 
+  get totalPay(): number {
+    return this.entry.hours * this.entry.payAmount;
+  }
+
   ngOnInit() {
     this.service.getDepartments().subscribe();
+    this.service.getEmployees().subscribe();
 
     const sel = this.service.getSelectedDepartment();
     if (sel) {
@@ -30,12 +35,17 @@ export class TimesheetEntryComponent implements OnInit, OnDestroy {
   }
 
   save() {
-    if (!this.entry.date || !this.entry.departmentId || this.entry.hours <= 0) {
+    if (!this.entry.date || !this.entry.departmentId || !this.entry.employeeId || this.entry.hours <= 0 || this.entry.payAmount < 0) {
       return;
     }
 
-    this.service.addEntry({ ...this.entry }).subscribe(() => {
-      this.entry = { date: '', hours: 0, departmentId: '' };
+    const entryToSave: TimesheetEntry = {
+      ...this.entry,
+      totalPay: this.entry.hours * this.entry.payAmount
+    };
+
+    this.service.addEntry(entryToSave).subscribe(() => {
+      this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
     });
   }
   ngOnDestroy() {

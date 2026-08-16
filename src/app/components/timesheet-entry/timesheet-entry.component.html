@@ -11,16 +11,31 @@
         <label>Hours</label>
         <input type="number" [(ngModel)]="entry.hours" name="hours" required />
       </div>
-      <div style="width:260px">
+      <div style="width:180px">
+        <label>Hourly Rate</label>
+        <input type="number" step="0.01" min="0" [(ngModel)]="entry.payAmount" name="payAmount" required />
+      </div>
+      <div style="width:220px">
         <label>Department</label>
         <select [(ngModel)]="entry.departmentId" name="departmentId" required>
           <option value="" disabled>Select department</option>
           <option *ngFor="let d of (service.departments$ | async) ?? []" [value]="d._id || d.id">{{ d.name }}</option>
         </select>
       </div>
+      <div style="width:220px">
+        <label>Employee</label>
+        <select [(ngModel)]="entry.employeeId" name="employeeId" required>
+          <option value="" disabled>Select employee</option>
+          <option *ngFor="let e of (service.employees$ | async) ?? []" [value]="e._id || e.id">{{ e.name }}</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:end">
         <button class="btn" type="submit">Save</button>
       </div>
+    </div>
+
+    <div *ngIf="entry.hours > 0 || entry.payAmount > 0" style="margin-top:12px" class="meta">
+      Estimated total pay: ${{ totalPay.toFixed(2) }}
     </div>
   </form>
 
