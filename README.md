@@ -2,6 +2,27 @@
 
 A full-stack Angular + Express timesheet tracking app for logging employee hours, calculating pay, managing departments and employees, and reviewing payroll analytics.
 
+## Quick Start
+
+```bash
+# install frontend dependencies
+npm install
+
+# install backend dependencies
+cd server && npm install
+
+# start MongoDB locally
+mongod
+
+# in one terminal: start API
+cd server && npm start
+
+# in another terminal: start Angular app
+npm start
+```
+
+Open the app at http://localhost:4200 and the API at http://localhost:3000.
+
 ## Overview
 
 This project includes:
