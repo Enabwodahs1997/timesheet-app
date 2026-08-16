@@ -15,7 +15,7 @@
         <label>Department</label>
         <select [(ngModel)]="entry.departmentId" name="departmentId" required>
           <option value="" disabled>Select department</option>
-          <option *ngFor="let d of service.getDepartments()" [value]="d._id || d.id">{{ d.name }}</option>
+          <option *ngFor="let d of (service.departments$ | async) ?? []" [value]="d._id || d.id">{{ d.name }}</option>
         </select>
       </div>
       <div style="display:flex;align-items:end">

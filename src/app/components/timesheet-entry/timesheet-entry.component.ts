@@ -18,6 +18,8 @@ export class TimesheetEntryComponent implements OnInit, OnDestroy {
   constructor(public service: TimesheetService) {}
 
   ngOnInit() {
+    this.service.getDepartments().subscribe();
+
     const sel = this.service.getSelectedDepartment();
     if (sel) {
       this.entry.departmentId = sel._id || sel.id || '';
@@ -28,6 +30,10 @@ export class TimesheetEntryComponent implements OnInit, OnDestroy {
   }
 
   save() {
+    if (!this.entry.date || !this.entry.departmentId || this.entry.hours <= 0) {
+      return;
+    }
+
     this.service.addEntry({ ...this.entry }).subscribe(() => {
       this.entry = { date: '', hours: 0, departmentId: '' };
     });
