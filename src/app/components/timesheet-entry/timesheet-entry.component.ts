@@ -35,17 +35,22 @@ export class TimesheetEntryComponent implements OnInit, OnDestroy {
   }
 
   save() {
-    if (!this.entry.date || !this.entry.departmentId || !this.entry.employeeId || this.entry.hours <= 0 || this.entry.payAmount < 0) {
-      return;
-    }
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
 
-    const entryToSave: TimesheetEntry = {
-      ...this.entry,
-      totalPay: this.entry.hours * this.entry.payAmount
-    };
+    setTimeout(() => {
+      if (!this.entry.date || !this.entry.departmentId || !this.entry.employeeId || this.entry.hours <= 0 || this.entry.payAmount < 0) {
+        return;
+      }
 
-    this.service.addEntry(entryToSave).subscribe(() => {
-      this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
+      const entryToSave: TimesheetEntry = {
+        ...this.entry,
+        totalPay: this.entry.hours * this.entry.payAmount
+      };
+
+      this.service.addEntry(entryToSave).subscribe(() => {
+        this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
+      });
     });
   }
   ngOnDestroy() {

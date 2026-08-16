@@ -212,10 +212,13 @@ export class AnalysisComponent implements OnInit {
 
   exportCsv(entries: any[] = []): void {
     const filtered = this.getFilteredEntries(entries);
-    const header = ['date', 'hours', 'hourlyRate', 'totalPay', 'departmentId'];
+    const employeeList = this.service.employees$ ? (this.service as any).employeesSubject?.getValue?.() ?? [] : [];
+    const header = ['date', 'employee', 'hours', 'hourlyRate', 'totalPay', 'departmentId'];
     const csvRows = [header.join(',')].concat(filtered.map((entry: any) => {
+      const employeeName = this.getEmployeeName(entry.employeeId ?? '', employeeList);
       const values = [
         entry.date ?? '',
+        employeeName,
         Number(entry.hours ?? 0),
         Number(entry.payAmount ?? 0),
         this.getEntryTotalPay(entry),
