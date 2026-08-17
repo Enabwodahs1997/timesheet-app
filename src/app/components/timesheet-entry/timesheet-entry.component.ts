@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class TimesheetEntryComponent implements OnInit, OnDestroy {
   entry: TimesheetEntry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
+  isSaving = false;
   private sub?: Subscription;
 
   constructor(public service: TimesheetService) {}
@@ -35,23 +36,34 @@ export class TimesheetEntryComponent implements OnInit, OnDestroy {
   }
 
   save() {
-    const activeElement = document.activeElement as HTMLElement | null;
-    activeElement?.blur();
+    if (this.isSaving) {
+      return;
+    }
 
-    setTimeout(() => {
-      if (!this.entry.date || !this.entry.departmentId || !this.entry.employeeId || this.entry.hours <= 0 || this.entry.payAmount < 0) {
-        return;
-      }
+    if (!this.entry.date || !this.entry.departmentId || !this.entry.employeeId || this.entry.hours <= 0 || this.entry.payAmount < 0) {
+      return;
+    }
 
-      const entryToSave: TimesheetEntry = {
-        ...this.entry,
-        totalPay: this.entry.hours * this.entry.payAmount
-      };
+    const entryToSave: TimesheetEntry = {
+      ...this.entry,
+      totalPay: this.entry.hours * this.entry.payAmount
+    };
 
-      this.service.addEntry(entryToSave).subscribe(() => {
+    this.isSaving = true;
+    this.service.addEntry(entryToSave).subscribe({
+      next: () => {
         this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
-      });
+      },
+      error: () => {
+        this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
+      },
+      complete: () => {
+        this.isSaving = false;
+      }
     });
+
+    this.entry = { date: '', hours: 0, payAmount: 0, totalPay: 0, departmentId: '', employeeId: '' };
+    this.isSaving = false;
   }
   ngOnDestroy() {
     this.sub?.unsubscribe();

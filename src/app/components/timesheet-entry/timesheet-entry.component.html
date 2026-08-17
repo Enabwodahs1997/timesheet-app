@@ -30,7 +30,9 @@
         </select>
       </div>
       <div style="display:flex;align-items:end">
-        <button class="btn" type="submit">Save</button>
+        <button class="btn" type="submit" [disabled]="isSaving">
+          {{ isSaving ? 'Saving...' : 'Save' }}
+        </button>
       </div>
     </div>
 

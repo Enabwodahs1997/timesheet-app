@@ -43,22 +43,56 @@ export class TimesheetService {
 
   addEntry(entry: TimesheetEntry): Observable<any> {
     const normalized = this.normalizeEntry(entry);
+    const optimisticEntry = this.normalizeEntry({
+      ...normalized,
+      ...(normalized as any)._id ? { _id: (normalized as any)._id } : { _id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}` }
+    } as TimesheetEntry);
+
+    const current = this.entriesSubject.getValue();
+    this.entriesSubject.next([optimisticEntry, ...current]);
+    this._localAdd(optimisticEntry);
 
     return this.http.post<TimesheetEntry>(`${this.baseUrl}/entries`, normalized).pipe(
       tap((saved: TimesheetEntry) => {
-        const current = this.entriesSubject.getValue();
-        this.entriesSubject.next([this.normalizeEntry(saved), ...current]);
+        const synced = this.normalizeEntry(saved);
+        const updated = this.entriesSubject.getValue().map((item: TimesheetEntry) => {
+          const itemId = (item as any)._id || (item as any).id;
+          const optimisticId = (optimisticEntry as any)._id || (optimisticEntry as any).id;
+          return itemId === optimisticId ? synced : item;
+        });
+        this.entriesSubject.next(updated);
+
+        const localEntries = this._localGetAll();
+        (this as any)._entries = localEntries.map((item: TimesheetEntry) => {
+          const itemId = (item as any)._id || (item as any).id;
+          const optimisticId = (optimisticEntry as any)._id || (optimisticEntry as any).id;
+          return itemId === optimisticId ? synced : item;
+        });
       }),
       catchError((err: any) => {
         console.error('POST /entries failed, using local fallback', err);
-        const localEntry = this.normalizeEntry({
-          ...entry,
-          ...(entry as any)._id ? { _id: (entry as any)._id } : { _id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}` }
+        const currentEntries = this.entriesSubject.getValue();
+        const fallback = this.normalizeEntry({
+          ...normalized,
+          ...(normalized as any)._id ? { _id: (normalized as any)._id } : { _id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}` }
         } as TimesheetEntry);
-        this._localAdd(localEntry);
-        const current = this.entriesSubject.getValue();
-        this.entriesSubject.next([localEntry, ...current]);
-        return of(localEntry);
+
+        this.entriesSubject.next(currentEntries.filter((item: TimesheetEntry) => {
+          const itemId = (item as any)._id || (item as any).id;
+          const optimisticId = (optimisticEntry as any)._id || (optimisticEntry as any).id;
+          return itemId !== optimisticId;
+        }));
+
+        const localEntries = this._localGetAll();
+        (this as any)._entries = localEntries.filter((item: TimesheetEntry) => {
+          const itemId = (item as any)._id || (item as any).id;
+          const optimisticId = (optimisticEntry as any)._id || (optimisticEntry as any).id;
+          return itemId !== optimisticId;
+        });
+
+        this._localAdd(fallback);
+        this.entriesSubject.next([fallback, ...this.entriesSubject.getValue()]);
+        return of(fallback);
       })
     );
   }
